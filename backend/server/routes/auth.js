@@ -41,7 +41,10 @@ router.post("/register", async (req, res) => {
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error registering user" });
+    console.error("Error registering user:", error);
+    res
+      .status(500)
+      .json({ message: `Error registering user: ${error.message}` });
   }
 });
 
@@ -54,7 +57,7 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ message: "Invalid email or password" });
   }
 
-  const isMatch = await user.matchPassword(password);
+  const isMatch = await user.comparePassword(password);
   if (!isMatch) {
     return res.status(400).json({ message: "Invalid email or password" });
   }

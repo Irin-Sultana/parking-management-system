@@ -6,8 +6,6 @@ const authRoutes = require("./routes/auth");
 
 dotenv.config();
 
-const authRoutes = require("./routes/auth");
-
 const app = express();
 
 // Middlewares
@@ -16,10 +14,7 @@ app.use(express.json());
 
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("MongoDB connected successfully");
   })

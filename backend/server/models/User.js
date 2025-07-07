@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const { use } = require("react");
+
 /**
  * User Schema for MongoDB
  * This schema defines the structure of user documents in the database.
