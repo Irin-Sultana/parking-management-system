@@ -24,6 +24,8 @@ import {
   History as HistoryIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useNavigate } from 'react-router-dom';
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -36,6 +38,16 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 const ClientDashboard = () => {
+  
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('userName');
+    navigate('/login');
+  };
+
   // Mock data
   const quickActions = [
     { label: 'Park Vehicle', icon: <ParkingIcon fontSize="large" />, color: 'primary' },
@@ -64,8 +76,11 @@ const ClientDashboard = () => {
             </Badge>
           </IconButton>
           <IconButton color="inherit">
-            <ProfileIcon />
-          </IconButton>
+            <ProfileIcon /> 
+            </IconButton>
+              <IconButton color="inherit" onClick={handleLogout} sx={{ ml: 1 }}>
+                <LogoutIcon />
+              </IconButton>
         </Toolbar>
       </AppBar>
       <Container maxWidth="lg" sx={{ py: 4, flex: 1 }}>
