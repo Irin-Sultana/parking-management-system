@@ -92,11 +92,26 @@ const Register = () => {
       setSubmitError('');
       
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Replace with actual registration logic
-      console.log('Registration data:', formData);
-      navigate('/login'); // Redirect to login after successful registration
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: 'user'  // or 'admin' if registering an admin manually
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      navigate('/login');
       
     } catch (err) {
       setSubmitError(err.message || 'Registration failed');

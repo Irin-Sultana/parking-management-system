@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import ListItemButton from '@mui/material/ListItemButton';
 import { styled } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 
 const drawerWidth = 240;
 
@@ -50,6 +51,15 @@ const AdminDashboard = () => {
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
+
+  const navigate = useNavigate();
+
+const handleLogout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('role');
+  localStorage.removeItem('userName');
+  navigate('/login');
+};
 
   // Mock data
   const stats = [
@@ -116,7 +126,7 @@ const AdminDashboard = () => {
               <NotificationsIcon />
             </Badge>
           </IconButton>
-          <IconButton color="inherit">
+          <IconButton color="inherit" onClick={handleLogout} sx={{ ml: 1 }}>
             <LogoutIcon />
           </IconButton>
         </Toolbar>
