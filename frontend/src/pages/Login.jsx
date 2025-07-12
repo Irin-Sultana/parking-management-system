@@ -55,17 +55,32 @@ const Login = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Replace with actual authentication logic
-      if (email === 'admin@example.com' && password === 'admin123') {
-        navigate('/admin');
-      } else if (email === 'client@example.com' && password === 'client123') {
-        navigate('/client');
-      } else {
-        setError('Invalid email or password');
-      }
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ email, password })
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+  throw new Error(data.message || 'Login failed');
+}
+
+localStorage.setItem('token', data.token);
+localStorage.setItem('role', data.role);
+
+if (data.role === 'admin') {
+  navigate('/admin');
+} else {
+  navigate('/client');
+}
     } catch (err) {
-      setError('An unexpected error occurred');
-      console.error(err);
+      setError(err.message || 'An unexpected error occurred');
+      console.error("Login error:", err);
+
     } finally {
       setLoading(false);
     }
