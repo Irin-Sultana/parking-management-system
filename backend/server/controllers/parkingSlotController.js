@@ -1,7 +1,16 @@
 const ParkingZone = require("../models/ParkingZone");
 const ParkingSlot = require("../models/ParkingSlot");
 const ParkingSession = require("../models/ParkingSession");
+const Log = require("../models/Log");
+const {
+  differenceInHours,
+  differenceInMinutes,
+  parseISO,
+} = require("date-fns");
 
+// @desc    Create a new parking slot (Admin only)
+// @route   POST /api/parking-slots
+// @access  Private/Admin
 const createParkingSlot = async (req, res) => {
   const { slotId, slotType, pricePerHour, parkingZoneId } = req.body;
   if (!slotId || !slotType || !pricePerHour || !parkingZoneId) {
@@ -26,7 +35,7 @@ const createParkingSlot = async (req, res) => {
       .status(400)
       .json({ message: "Parking Slot with this ID already exists." });
   }
-  const zoneExists = await ParkingZone.findById(parkingZoneId);
+  const zoneExists = await ParkingZone.findOne({ zoneId: parkingZoneId });
   if (!zoneExists) {
     return res
       .status(404)
@@ -37,7 +46,7 @@ const createParkingSlot = async (req, res) => {
       slotId,
       slotType: slotType.toUpperCase(),
       pricePerHour,
-      parkingZone: parkingZoneId,
+      parkingZone: zoneExists?._id,
       status: "AVAILABLE",
       isAvailable: true,
     });
@@ -70,7 +79,7 @@ const isSlotAvailableForBooking = async (
   }
 
   // 2. Check for overlapping 'RESERVED' or 'ACTIVE' sessions
-  const overlappingSessions = await EntryVehicleExit.find({
+  const overlappingSessions = await ParkingSession.find({
     parkingSlot: slotId,
     status: { $in: ["RESERVED", "ACTIVE"] },
     $or: [
@@ -238,8 +247,159 @@ const searchParkingSlots = async (req, res) => {
   }
 };
 
-modules.export = {
+// @desc    Get all parking slots (can be filtered by query params)
+// @route   GET /api/parking-slots?zoneId=<id>&status=<status>&slotType=<type>
+// @access  Public
+const getParkingSlots = async (req, res) => {
+  const { zoneId, status, slotType } = req.query;
+  const query = {};
+
+  const parkingZone = await ParkingZone.findOne({ zoneId }).lean();
+
+  if (zoneId) query.parkingZone = parkingZone?._id;
+  if (status) query.status = status.toUpperCase();
+  if (slotType) query.slotType = slotType.toUpperCase();
+
+  try {
+    const slots = await ParkingSlot.find(query).populate("parkingZone");
+    res.json(slots);
+  } catch (error) {
+    console.error("Error fetching parking slots:", error);
+    res.status(500).json({ message: "Server error fetching parking slots." });
+  }
+};
+
+// @desc    Get a single parking slot by ID
+// @route   GET /api/parking-slots/:id
+// @access  Public
+const getParkingSlotById = async (req, res) => {
+  try {
+    const slot = await ParkingSlot.findOne({ slotId: req.params.id }).populate(
+      "parkingZone"
+    );
+    console.log(slot, "slot===");
+    if (slot) {
+      res.json(slot);
+    } else {
+      res.status(404).json({ message: "Parking Slot not found." });
+    }
+  } catch (error) {
+    console.error("Error fetching parking slot by ID:", error);
+    res
+      .status(500)
+      .json({ message: "Server error fetching parking slot details." });
+  }
+};
+
+// @desc    Update a parking slot by ID (Admin only)
+// @route   PUT /api/parking-slots/:id
+// @access  Private/Admin
+const updateParkingSlot = async (req, res) => {
+  const { slotType, pricePerHour, status, isAvailable, parkingZoneId } =
+    req.body;
+
+  try {
+    const slot = await ParkingSlot.findOne({ slotId: req.params.id });
+
+    if (slot) {
+      if (slotType) {
+        if (!["COMPACT", "REGULAR", "LARGE"].includes(slotType.toUpperCase())) {
+          return res.status(400).json({ message: "Invalid slot type." });
+        }
+        slot.slotType = slotType.toUpperCase();
+      }
+      if (pricePerHour !== undefined) {
+        if (isNaN(pricePerHour) || pricePerHour < 0) {
+          return res
+            .status(400)
+            .json({ message: "Price per hour must be a non-negative number." });
+        }
+        slot.pricePerHour = pricePerHour;
+      }
+      if (status) {
+        if (
+          !["AVAILABLE", "OCCUPIED", "RESERVED", "MAINTENANCE"].includes(
+            status.toUpperCase()
+          )
+        ) {
+          return res.status(400).json({ message: "Invalid status." });
+        }
+        slot.status = status.toUpperCase();
+      }
+      if (isAvailable !== undefined) slot.isAvailable = isAvailable;
+      if (parkingZoneId) {
+        const zoneExists = await ParkingZone.findOne({ zoneId: parkingZoneId });
+        if (!zoneExists) {
+          return res
+            .status(404)
+            .json({ message: "New Parking Zone not found." });
+        }
+        slot.parkingZone = parkingZoneId;
+      }
+
+      const updatedSlot = await slot.save();
+
+      await Log.create({
+        action: "Parking Slot Updated",
+        userId: req.user._id,
+        details: {
+          slotId: updatedSlot.slotId,
+          newStatus: updatedSlot.status,
+          updatedFields: Object.keys(req.body),
+        },
+      });
+
+      res.json(updatedSlot);
+    } else {
+      res.status(404).json({ message: "Parking Slot not found." });
+    }
+  } catch (error) {
+    console.error("Error updating parking slot:", error);
+    res.status(500).json({ message: "Server error updating parking slot." });
+  }
+};
+
+// @desc    Delete a parking slot by ID (Admin only)
+// @route   DELETE /api/parking-slots/:id
+// @access  Private/Admin
+const deleteParkingSlot = async (req, res) => {
+  try {
+    const slot = await ParkingSlot.findOne({ slotId: req.params.id });
+
+    if (slot) {
+      const activeSessions = await ParkingSession.countDocuments({
+        parkingSlot: slot._id,
+        status: { $in: ["RESERVED", "ACTIVE"] },
+      });
+      if (activeSessions > 0) {
+        return res.status(400).json({
+          message:
+            "Cannot delete slot with active or reserved parking sessions.",
+        });
+      }
+
+      await slot.deleteOne();
+      await Log.create({
+        action: "Parking Slot Deleted",
+        userId: req.user._id,
+        details: { deletedSlotId: slot._id, slotId: slot.slotId },
+      });
+      res.json({ message: "Parking Slot removed successfully." });
+    } else {
+      res.status(404).json({ message: "Parking Slot not found." });
+    }
+  } catch (error) {
+    console.error("Error deleting parking slot:", error);
+    res.status(500).json({ message: "Server error deleting parking slot." });
+  }
+};
+
+module.exports = {
   createParkingSlot,
   isSlotAvailableForBooking,
   searchParkingSlots,
+  getParkingSlotById,
+  getParkingSlots,
+  updateParkingSlot,
+  deleteParkingSlot,
 };
