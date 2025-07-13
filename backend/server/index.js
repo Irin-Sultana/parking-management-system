@@ -4,6 +4,8 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const parkingZonesRoutes = require("./routes/parkingZoneRoutes");
+const parkingSlotRoutes = require("./routes/parkingSlotRoutes");
+const vehicleRoutes = require("./routes/vehicleRoutes");
 
 dotenv.config();
 
@@ -26,6 +28,8 @@ mongoose
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/parking-zones", parkingZonesRoutes);
+app.use("/api/parking-slots", parkingSlotRoutes);
+app.use("/api/vehicles", vehicleRoutes);
 
 // Port
 const PORT = process.env.PORT || 5000;
