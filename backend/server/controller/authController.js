@@ -101,8 +101,62 @@ const getUserProfile = async () => {
   }
 };
 
+const updateUserProfile = async (req, res) => {
+  const { name, email } = req.body;
+  const { authorization } = req.headers;
+  if (!authorization) {
+    return res.status(401).json({ message: "No token, authorization denied" });
+  }
+
+  const token = authorization.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.name = name || user.name;
+    user.email = email || user.email;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "User profile updated successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    console.error("Error updating user profile:", err);
+    res.status(500).json({ message: "Server error while updating profile" });
+  }
+};
+
+const logoutUser = async (req, res) => {
+  const { authorization } = req.headers;
+
+  if (!authorization) {
+    return res.status(401).json({ message: "No token, authorization denied" });
+  }
+
+  const token = authorization.split(" ")[1];
+
+  try {
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error during logout" });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
+  logoutUser,
+  updateUserProfile,
 };
