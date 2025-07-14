@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   CssBaseline,
@@ -26,6 +26,7 @@ import {
 import { styled } from '@mui/material/styles';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useNavigate } from 'react-router-dom';
+import axios from '../utils/axiosInstance';
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -40,6 +41,14 @@ const Item = styled(Paper)(({ theme }) => ({
 const ClientDashboard = () => {
   
   const navigate = useNavigate();
+
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    axios.get('/auth/profile')
+      .then(res => setUser(res.data))
+      .catch(err => console.error('Failed to fetch user:', err));
+  }, []);
+
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -88,7 +97,9 @@ const ClientDashboard = () => {
         <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
           <Avatar sx={{ width: 64, height: 64, mr: 2 }} src="/user-avatar.jpg" />
           <Box>
-            <Typography variant="h5">Welcome back, John!</Typography>
+            <Typography variant="h5">
+              {user ? `Welcome back, ${user.name}!` : 'Welcome!'}
+            </Typography>
             <Typography variant="body2" color="text.secondary">
               Last parked: Spot A-12 (Today 10:30 AM)
             </Typography>
