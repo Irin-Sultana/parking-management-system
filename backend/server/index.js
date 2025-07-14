@@ -7,6 +7,8 @@ const parkingZonesRoutes = require("./routes/parkingZoneRoutes");
 const parkingSlotRoutes = require("./routes/parkingSlotRoutes");
 const vehicleRoutes = require("./routes/vehicleRoutes");
 const parkingSessionRoutes = require("./routes/parkingSessionRoutes");
+const invoiceRoutes = require("./routes/invoiceRoutes");
+const paymentStatusRoutes = require("./routes/paymentStatusRoutes");
 
 dotenv.config();
 
@@ -32,6 +34,8 @@ app.use("/api/parking-zones", parkingZonesRoutes);
 app.use("/api/parking-slots", parkingSlotRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/parking-sessions", parkingSessionRoutes);
+app.use("/api/invoices", invoiceRoutes);
+app.use("/api/admin/payment-statuses", paymentStatusRoutes);
 
 // Port
 const PORT = process.env.PORT || 5000;
