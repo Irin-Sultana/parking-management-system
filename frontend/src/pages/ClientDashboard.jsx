@@ -42,6 +42,25 @@ const ClientDashboard = () => {
   
   const navigate = useNavigate();
 
+  const handleQuickAction = (label) => {
+    switch (label) {
+      case 'Park Vehicle':
+        navigate('/slots');
+        break;
+      case 'View History':
+        navigate('/history');
+        break;
+      case 'Make Payment':
+        navigate('/invoices');
+        break;
+      case 'Get Help':
+        navigate('/support');
+        break;
+      default:
+        break;
+    }
+  };
+
   const [user, setUser] = useState(null);
   useEffect(() => {
     axios.get('/auth/profile')
@@ -69,6 +88,17 @@ const ClientDashboard = () => {
         setRecentSessions(completed.slice(0, 5));
       })
       .catch(err => console.error('Error fetching history:', err));
+  }, []);
+
+  const [unpaidInvoices, setUnpaidInvoices] = useState([]);
+
+  useEffect(() => {
+    axios.get('/invoices/my')
+      .then(res => {
+        const pending = res.data.filter(i => i.paymentStatus?.status === 'PENDING');
+        setUnpaidInvoices(pending);
+      })
+      .catch(err => console.error('Error fetching invoices:', err));
   }, []);
 
   const handleLogout = () => {
@@ -136,6 +166,7 @@ const ClientDashboard = () => {
                 variant="contained"
                 color={action.color}
                 sx={{ py: 4, borderRadius: 2 }}
+                onClick={() => handleQuickAction(action.label)} // ← ADD THIS!
               >
                 <Stack spacing={1} alignItems="center">
                   {action.icon}
@@ -146,6 +177,28 @@ const ClientDashboard = () => {
           ))}
         </Grid>
 
+        {unpaidInvoices.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6">Unpaid Invoices</Typography>
+            <Stack spacing={2}>
+              {unpaidInvoices.map(invoice => (
+                <Paper key={invoice._id} sx={{ p: 2 }}>
+                  <Typography>Invoice Amount: ${invoice.amount}</Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() =>
+                      axios.post(`/invoices/${invoice._id}/pay`)
+                          .then(() => window.location.reload())
+                          .catch(err => console.error('Payment failed:', err))
+                    }
+                  >
+                    Pay Now
+                  </Button>
+                </Paper>
+              ))}
+            </Stack>
+          </Box>
+        )}
         {/* Current Vehicle Status */}
         <Grid container spacing={3}>
           <Grid xs={12} md={6}>
