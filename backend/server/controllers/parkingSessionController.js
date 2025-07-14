@@ -78,7 +78,7 @@ const startParkingSession = async (req, res) => {
       "owner"
     );
     console.log(vehicle, "vehicle");
-    if (!vehicle || vehicle.owner._id.toString() !== req.user.id.toString()) {
+    if (!vehicle || vehicle.owner._id.toString() !== req.user._id.toString()) {
       return res
         .status(403)
         .json({ message: "Vehicle not found or not owned by current user." });
@@ -111,7 +111,7 @@ const startParkingSession = async (req, res) => {
       exitTime: newExitTime,
       parkingSlot: slot?._id,
       vehicle: vehicle?._id,
-      user: req.user.id,
+      user: req.user._id,
       status: sessionStatus,
     });
 
@@ -121,7 +121,7 @@ const startParkingSession = async (req, res) => {
       slot.reservedBy = undefined;
     } else if (sessionStatus === "RESERVED") {
       slot.status = "RESERVED";
-      slot.reservedBy = req.user.id;
+      slot.reservedBy = req.user._id;
       slot.occupiedByVehicle = undefined;
     }
     await slot.save();
@@ -132,7 +132,7 @@ const startParkingSession = async (req, res) => {
 
     const invoice = await Invoice.create({
       amount: estimatedAmount,
-      user: req.user.id,
+      user: req.user._id,
       parkingSession: session._id,
       issueDate: new Date(),
       paymentStatus: paymentStatus._id,
@@ -143,11 +143,19 @@ const startParkingSession = async (req, res) => {
     await session.save();
 
     const populatedSession = await ParkingSession.findById(session._id) // Use ParkingSession
-      .populate("parkingSlot", "slotId pricePerHour parkingZone")
+      .populate({
+        path: "parkingSlot",
+        select: "slotId pricePerHour parkingZone",
+        populate: {
+          path: "parkingZone",
+          select: "name address location",
+        },
+      })
       .populate("vehicle", "licensePlate")
       .populate("user", "username email")
       .populate({ path: "invoice", populate: { path: "paymentStatus" } });
 
+    console.log(populatedSession, "populatedSession");
     await sendEmail({
       email: req.user.email,
       subject: `UniPark ${
@@ -159,7 +167,7 @@ const startParkingSession = async (req, res) => {
                     ? "Session has Started!"
                     : "Booking is Confirmed!"
                 }</h1>
-                <p>Hello ${req.user.username},</p>
+                <p>Hello ${req.user.name},</p>
                 <p>Your parking spot has been successfully ${
                   sessionStatus === "ACTIVE" ? "occupied" : "reserved"
                 }.</p>
@@ -191,7 +199,7 @@ const startParkingSession = async (req, res) => {
 
     await Log.create({
       action: `Parking Session ${sessionStatus}d`,
-      userId: req.user.id,
+      userId: req.user._id,
       details: {
         sessionId: session._id,
         slotId: slot.slotId,
@@ -239,7 +247,7 @@ const endParkingSession = async (req, res) => {
     }
     if (
       req.user.role !== "ADMIN" &&
-      session.user.id.toString() !== req.user.id.toString()
+      session.user._id.toString() !== req.user._id.toString()
     ) {
       return res
         .status(403)
@@ -278,7 +286,7 @@ const endParkingSession = async (req, res) => {
 
     await Log.create({
       action: "Parking Session Ended",
-      userId: req.user.id,
+      userId: req.user._id,
       details: {
         sessionId: session._id,
         slotId: session.parkingSlot.slotId,
@@ -307,7 +315,7 @@ const endParkingSession = async (req, res) => {
 // @access  Private
 const getUserParkingSessions = async (req, res) => {
   try {
-    const sessions = await ParkingSession.find({ user: req.user.id }) // Use ParkingSession
+    const sessions = await ParkingSession.find({ user: req.user._id }) // Use ParkingSession
       .populate("parkingSlot")
       .populate("vehicle")
       .populate({ path: "invoice", populate: { path: "paymentStatus" } })
@@ -337,7 +345,7 @@ const getParkingSessionById = async (req, res) => {
     }
     if (
       req.user.role !== "ADMIN" &&
-      session.user.id.toString() !== req.user.id.toString()
+      session.user._id.toString() !== req.user._id.toString()
     ) {
       return res
         .status(403)
