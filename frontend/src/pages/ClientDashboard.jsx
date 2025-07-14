@@ -60,6 +60,17 @@ const ClientDashboard = () => {
       .catch(err => console.error('Error fetching session:', err));
   }, []);
 
+  const [recentSessions, setRecentSessions] = useState([]);
+
+  useEffect(() => {
+    axios.get('/parking-sessions/my')
+      .then(res => {
+        const completed = res.data.filter(s => s.status === 'COMPLETED');
+        setRecentSessions(completed.slice(0, 5));
+      })
+      .catch(err => console.error('Error fetching history:', err));
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
@@ -167,18 +178,15 @@ const ClientDashboard = () => {
                 Recent Activity
               </Typography>
               <Stack spacing={2}>
-                {recentActivity.map((activity, index) => (
+                {recentSessions.map((session, index) => (
                   <Paper key={index} sx={{ p: 2, textAlign: 'left' }}>
-                    <Typography variant="subtitle2">{activity.time}</Typography>
-                    <Typography>{activity.action}</Typography>
-                    {activity.duration && (
-                      <Typography variant="caption">
-                        {activity.duration} • {activity.cost}
-                      </Typography>
-                    )}
-                    {!activity.duration && (
-                      <Typography variant="caption">{activity.cost}</Typography>
-                    )}
+                    <Typography variant="subtitle2">
+                      {new Date(session.actualExitTime).toLocaleString()}
+                    </Typography>
+                    <Typography>{`Parked at Spot ${session.parkingSlot.slotId}`}</Typography>
+                    <Typography variant="caption">
+                      {session.durationHours}h • ${session.durationHours * session.parkingSlot.pricePerHour}
+                    </Typography>
                   </Paper>
                 ))}
               </Stack>
