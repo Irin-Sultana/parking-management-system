@@ -33,8 +33,8 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["user", "admin"],
-    default: "user",
+    enum: ["USER", "ADMIN"],
+    default: "USER",
   },
 });
 
@@ -46,6 +46,7 @@ userSchema.pre("save", async function (next) {
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  console.log(candidatePassword, this.password, "compare----");
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

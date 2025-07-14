@@ -1,12 +1,8 @@
-const express = require("express");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const router = express.Router();
-const protect = require("../middlewares/authMiddleware");
 
-// Register a new user
-router.post("/register", async (req, res) => {
+const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
 
   try {
@@ -15,12 +11,10 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const user = new User({
       name,
       email,
-      password: hashedPassword,
+      password,
       role,
     });
 
@@ -32,7 +26,6 @@ router.post("/register", async (req, res) => {
       { expiresIn: "30d" }
     );
 
-    // Send full user info, including role and token
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -43,15 +36,15 @@ router.post("/register", async (req, res) => {
       },
       token,
     });
-
   } catch (error) {
     console.error("Error registering user:", error);
-    res.status(500).json({ message: `Error registering user: ${error.message}` });
+    res
+      .status(500)
+      .json({ message: `Error registering user: ${error.message}` });
   }
-});
+};
 
-// Login a user
-router.post("/login", async (req, res) => {
+const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -60,7 +53,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
@@ -76,18 +69,16 @@ router.post("/login", async (req, res) => {
       role: user.role,
       user: {
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
-
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ message: 'Server error during login' });
+    res.status(500).json({ message: "Server error during login" });
   }
-});
+};
 
-// Get user profile
-router.get("/profile", protect, async (req, res) => {
+const getUserProfile = async (req, res) => {
   const { authorization } = req.headers;
   if (!authorization) {
     return res.status(401).json({ message: "No token, authorization denied" });
@@ -106,6 +97,64 @@ router.get("/profile", protect, async (req, res) => {
   } catch (error) {
     return res.status(401).json({ message: "Token is not valid" });
   }
-});
+};
 
-module.exports = router;
+const updateUserProfile = async (req, res) => {
+  const { name, email } = req.body;
+  const { authorization } = req.headers;
+  if (!authorization) {
+    return res.status(401).json({ message: "No token, authorization denied" });
+  }
+
+  const token = authorization.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.name = name || user.name;
+    user.email = email || user.email;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "User profile updated successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    console.error("Error updating user profile:", err);
+    res.status(500).json({ message: "Server error while updating profile" });
+  }
+};
+
+const logoutUser = async (req, res) => {
+  const { authorization } = req.headers;
+
+  if (!authorization) {
+    return res.status(401).json({ message: "No token, authorization denied" });
+  }
+
+  const token = authorization.split(" ")[1];
+
+  try {
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error during logout" });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  getUserProfile,
+  logoutUser,
+  updateUserProfile,
+};
