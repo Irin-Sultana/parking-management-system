@@ -166,7 +166,7 @@ const ClientDashboard = () => {
                 variant="contained"
                 color={action.color}
                 sx={{ py: 4, borderRadius: 2 }}
-                onClick={() => handleQuickAction(action.label)} // ← ADD THIS!
+                onClick={() => handleQuickAction(action.label)}
               >
                 <Stack spacing={1} alignItems="center">
                   {action.icon}
