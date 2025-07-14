@@ -1,10 +1,11 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 /**
  * Middleware to protect routes by verifying JWT tokens.
  * This middleware checks for the presence of a token in the Authorization header,
  */
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   const { authorization } = req.headers;
 
   if (!authorization || !authorization.startsWith("Bearer")) {
@@ -15,7 +16,15 @@ const protect = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: "Not authorized, user not found" });
+    }
+    req.user = user;
     next();
   } catch (error) {
     res.status(401).json({ message: "Token is not valid" });
