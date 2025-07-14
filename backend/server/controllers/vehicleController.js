@@ -69,7 +69,7 @@ const createVehicle = async (req, res) => {
     const vehicle = await Vehicle.create({
       licensePlate: licensePlate.toUpperCase(),
       vehicleType: vehicleType.toUpperCase(),
-      owner: req.user.id,
+      owner: req.user._id,
     });
     await Log.create({
       action: "Vehicle Added",

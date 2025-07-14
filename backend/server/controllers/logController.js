@@ -1,13 +1,10 @@
 const Log = require("../models/Log");
 
-// @desc    Get all system logs (Admin only)
-// @route   GET /api/admin/logs
-// @access  Private/Admin
 const getAllLogs = async (req, res) => {
   try {
     const logs = await Log.find({})
       .populate("userId", "username email")
-      .sort({ timestamp: -1 }); // Sort by most recent first
+      .sort({ timestamp: -1 });
     res.json(logs);
   } catch (error) {
     console.error("Error fetching all logs:", error);
@@ -15,9 +12,6 @@ const getAllLogs = async (req, res) => {
   }
 };
 
-// @desc    Get a single log entry by ID (Admin only)
-// @route   GET /api/admin/logs/:id
-// @access  Private/Admin
 const getLogById = async (req, res) => {
   try {
     const log = await Log.findById(req.params.id).populate(
