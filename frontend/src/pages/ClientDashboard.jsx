@@ -49,6 +49,16 @@ const ClientDashboard = () => {
       .catch(err => console.error('Failed to fetch user:', err));
   }, []);
 
+  const [activeSession, setActiveSession] = useState(null);
+
+  useEffect(() => {
+    axios.get('/parking-sessions/my')
+      .then(res => {
+        const active = res.data.find(session => session.status === 'ACTIVE');
+        setActiveSession(active);
+      })
+      .catch(err => console.error('Error fetching session:', err));
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -134,10 +144,10 @@ const ClientDashboard = () => {
                 <Typography variant="h6">Current Parking</Typography>
               </Stack>
               <Box sx={{ textAlign: 'left', pl: 4 }}>
-                <Typography><strong>Spot:</strong> A-12 (Level 1)</Typography>
-                <Typography><strong>Entry Time:</strong> Today 10:30 AM</Typography>
-                <Typography><strong>Duration:</strong> 2h 15m</Typography>
-                <Typography><strong>Estimated Cost:</strong> $4.50</Typography>
+                <Typography><strong>Spot:</strong> {activeSession?.parkingSlot?.slotId || '—'}</Typography>
+                <Typography><strong>Entry Time:</strong> {activeSession ? new Date(activeSession.entryTime).toLocaleTimeString() : '—'}</Typography>
+                <Typography><strong>Duration:</strong> {activeSession?.durationHours}h</Typography>
+                <Typography><strong>Estimated Cost:</strong> ${activeSession?.durationHours * activeSession?.parkingSlot?.pricePerHour || 0}</Typography>
               </Box>
               <Button 
                 variant="outlined" 
