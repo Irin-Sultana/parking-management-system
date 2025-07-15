@@ -135,7 +135,7 @@ const ClientDashboard = () => {
               <NotificationsIcon />
             </Badge>
           </IconButton>
-          <IconButton color="inherit">
+          <IconButton color="inherit" onClick={() => navigate('/profile')}>
             <ProfileIcon /> 
             </IconButton>
               <IconButton color="inherit" onClick={handleLogout} sx={{ ml: 1 }}>

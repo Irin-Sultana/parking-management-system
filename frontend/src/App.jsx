@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import ClientDashboard from './pages/ClientDashboard';
+import ProfilePage from './pages/ProfilePage';
 import VehicleList from './pages/VehicleList';
 import InvoiceHistory from './pages/InvoiceHistory';
 import ParkingHistory from './pages/ParkingHistory';
@@ -50,6 +51,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/client" element={<ClientDashboard />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/vehicles" element={<VehicleList />} />
         <Route path="/invoices" element={<InvoiceHistory />} />
         <Route path="/history" element={<ParkingHistory />} />
