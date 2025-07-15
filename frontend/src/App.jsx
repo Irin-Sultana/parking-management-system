@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios from './utils/axiosInstance';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import ClientDashboard from './pages/ClientDashboard';
+import VehicleList from './pages/VehicleList';
+import InvoiceHistory from './pages/InvoiceHistory';
+import ParkingHistory from './pages/ParkingHistory';
+import ParkingSlotSearch from './pages/ParkingSlotSearch';
+import PaymentPage from './pages/PaymentPage';
+
 import './App.css'; // Optional: for global styles
 
 function App() {
@@ -44,6 +50,12 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/client" element={<ClientDashboard />} />
+        <Route path="/vehicles" element={<VehicleList />} />
+        <Route path="/invoices" element={<InvoiceHistory />} />
+        <Route path="/history" element={<ParkingHistory />} />
+        <Route path="/slots" element={<ParkingSlotSearch />} />
+        <Route path="/payment" element={<PaymentPage />} />
+
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
     </Router>
