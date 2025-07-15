@@ -75,6 +75,7 @@ npm start
 ```
 ## Folder Structure
 
+<img width="542" height="715" alt="Screenshot 2025-07-15 190436" src="https://github.com/user-attachments/assets/9f4668f3-0f1a-4aa5-9499-6b92755e2a9d" />
 parking-management-system/
 ├── backend/
 │   ├── server/
