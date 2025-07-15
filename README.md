@@ -97,5 +97,5 @@ parking-management-system/
 ## Notes
 - node_modules are excluded from version control. Run npm install in both frontend and backend folders.
 - MongoDB Atlas or local MongoDB server required.
-- - JWT token is stored in localStorage and sent in Authorization headers for protected routes.
+- JWT token is stored in localStorage and sent in Authorization headers for protected routes.
 
